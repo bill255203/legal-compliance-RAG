@@ -1,8 +1,7 @@
 import os
 from dotenv import load_dotenv
-from transformers import AutoTokenizer, AutoModelForCausalLM
 from requests import post
-from huggingface_hub import login
+import ollama  # Import Ollama's SDK (replace with the actual import if different)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -11,8 +10,8 @@ load_dotenv()
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
 CRIMINAL_KEY = os.getenv("CRIMINAL_KEY")
 
-
-# Authenticate with Hugging Face
+# Authenticate with Hugging Face (if still needed)
+from huggingface_hub import login
 login(token=HUGGINGFACE_TOKEN, add_to_git_credential=True)
 
 def fetch_documents_from_copytoaster(input_str, count=5):
@@ -31,23 +30,20 @@ def fetch_documents_from_copytoaster(input_str, count=5):
         return []
 
 def generate_llama_response(prompt, context_documents):
-    # Load the tokenizer and model
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
-    model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
-    
     # Combine the context documents into a single context string
     context = "\n\n".join([doc["document"] for doc in context_documents])
     # Create the full prompt
     full_prompt = f"Context: {context}\n\nQuestion: {prompt}\nAnswer:"
     
-    # Tokenize the input
-    inputs = tokenizer(full_prompt, return_tensors="pt")
+    # Generate response using Ollama's Llama3 model
+    client = ollama.Client(api_key=HUGGINGFACE_TOKEN)  # Replace with actual initialization if different
+    response = client.generate(
+        model="llama3",
+        prompt=full_prompt,
+        max_tokens=512
+    )
     
-    # Generate response
-    outputs = model.generate(inputs.input_ids, max_length=512, num_return_sequences=1)
-    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    
-    return response
+    return response["choices"][0]["text"].strip()
 
 # Example usage
 input_str = "用LINE恐嚇取財"
