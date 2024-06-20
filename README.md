@@ -107,9 +107,11 @@ c:\Users\USER\OneDrive\桌面\llama3\.venv\Scripts\python.exe -m pip install oll
 
 # Project Structure
 
+```
 ollama/
 ├── llama3.py # My experimental script for backup code
 ├── main.py # Run the interesting chatbot using the model you downloaded
 ├── ollama.py # Main script to run the main pipeline
 ├── README.md # This README file
 └── requirements.txt # List of Python dependencies
+```
