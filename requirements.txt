@@ -1,0 +1,7 @@
+transformers
+faiss-cpu
+numpy
+torch
+requests
+httpx==0.18.2
+openai

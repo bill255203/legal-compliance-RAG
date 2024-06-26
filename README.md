@@ -1,78 +1,87 @@
 # Legal Compliance Hackathon
 
-This project demonstrates a pipeline to generate a prompt using a Language Learning Model (LLM), fetch documents from an API, format the context and query, and get a response from the LLM using the provided context. The project uses the llama_index module to format the prompts and integrates with the CopyToaster API for document retrieval.
+This project demonstrates a pipeline to generate a prompt using a Language Learning Model (LLM), fetch documents from an API, format the context and query, and get a response from the LLM using the provided context. The project integrates various tools for document retrieval, vectorization, and querying.
 
-**What the Files Does**:
+## Project Structure
 
-1. Document Fetching: Fetch relevant documents using the CopyToaster API.
-2. Content Extraction: Extract document contents from the fetched results.
-3. Template Formatting: Use the PromptTemplate to format the context and query into the desired template.
-4. Final Prompt Generation: Send the formatted template to the LLM to get the final response.
-5. Print Final Response: Output the final response from the LLM.
-6. Running the Script
-   Update the main.py file with your CopyToaster API key before running the script.
+```
+ollama/
+├── llama3.py               # Experimental script for backup code
+├── main.py                 # Run the interesting chatbot using the model downloaded in Ollama
+├── llama2-chinese.py       # Main script to run and translate to Chinese
+├── vectorize-docs.py       # Latest version of vectorization file
+├── README.md               # This README file
+└── requirements.txt        # List of Python dependencies
 
-### 1. **Set Up Your Local Environment**
+```
 
-1. **Git Clone Project**:
+## Setup Instructions
 
-   ```bash
-   git clone https://github.com/bill255203/ollama.git
-   cd ollama
-   ```
+### 1. Set Up Your Local Environment
 
-2. **Create a Virtual Environment**:
+### 1.1. Git Clone Project
 
-   - It's a good practice to create a virtual environment for your project to manage dependencies.
+```bash
+git clone <https://github.com/bill255203/ollama.git>
+cd ollama
 
-   ```bash
-   python -m venv myenv
+```
 
-   ```
+### 1.2. Create a Virtual Environment
 
-3. **Activate the Virtual Environment**:
+It's a good practice to create a virtual environment for your project to manage dependencies.
 
-   - On Windows:
+```bash
+python -m venv .venv
 
-     ```bash
-     myenv\Scripts\activate
+```
 
-     ```
+### 1.3. Activate the Virtual Environment
 
-   - On macOS/Linux:
+- On Windows:
+  ```bash
+  .\\.venv\\Scripts\\activate
 
-     ```bash
-     source myenv/bin/activate
+  ```
+- On macOS/Linux:
+  ```bash
+  source .venv/bin/activate
 
-     ```
+  ```
 
-4. **Install Required Packages**:
+### 1.4. Install Required Packages
 
-   - Use `pip` to install the required libraries.
+Use `pip` to install the required libraries.
 
-   ```bash
-   pip install transformers torch requests huggingface-hub python-dotenv llama_index ollama
+```bash
+pip install -r requirements.txt
 
-   ```
+```
 
-5. **Install Required Models**:
+### 2. Install Required Models
 
-   - Use `ollama` to install the model ( or if you want to add others), and patiently wait for installation.
+Use `ollama` to install the model (or other models if needed) and patiently wait for installation.
 
-   ```bash
-   ollama run llama2-chinese
+```bash
+ollama run llama2-chinese
 
-   ```
+```
 
-   go to `https://ollama.com/library` for more information and models
+For more information and models, visit [Ollama Library](https://ollama.com/library).
 
-### 2. **Set Up Hugging Face Authentication**
+### 3. Set Up Hugging Face Authentication
 
-1. **Generate a Hugging Face API Token**:
-   - Go to your Hugging Face account settings and generate an API token if you don't have one already.
-2. **Authenticate with Hugging Face**:
-   - Use the token to authenticate your local environment.
-3. **Create .env file and copy and paste the below lines:**
+### 3.1. Generate a Hugging Face API Token
+
+Go to your Hugging Face account settings and generate an API token if you don't have one already.
+
+### 3.2. Authenticate with Hugging Face
+
+Use the token to authenticate your local environment.
+
+### 3.3. Create `.env` File
+
+Create a `.env` file in the project root and add the following lines:
 
 ```bash
 HUGGINGFACE_TOKEN=your_hugging_face_api_token
@@ -84,34 +93,32 @@ HIGH_CIVIL_KEY=P7zdKSLg2_vC9Q$)bUFGqtfX6kTcpNJ629
 
 ```
 
-### 3. Run the Script for ollama.py (main script)
+### 4. Run the Scripts
+
+### 4.1. Run the Main Script (`ollama.py`)
 
 ```bash
-python ollama.py
+python llama2-chinese.py
 
 ```
 
-## Streamlit chatbot
+### 4.2. Run the Streamlit Chatbot (`main.py`)
 
-The main.py contains a cool chatbot that is like a cool chatgpt, you can play with it by running:
+The `main.py` contains a chatbot. Run it using Streamlit:
 
 ```bash
-C:\Users\USER\AppData\Roaming\Python\Python311\Scripts\streamlit run main.py
+C:\\Users\\USER\\AppData\\Roaming\\Python\\Python311\\Scripts\\streamlit run main.py
+
 ```
 
-### Backup code for venv setup
+### 4.3. Run the New Vectorization Script (`vectorize-docs.py`)
+
+- **The `vectorize-docs.py` script handles document vectorization and should be run to set up the vector database.**
 
 ```bash
-c:\Users\USER\OneDrive\桌面\llama3\.venv\Scripts\python.exe -m pip install ollama
+python vectorize-docs.py
 ```
 
-# Project Structure
+### Additional Notes
 
-```
-ollama/
-├── llama3.py # My experimental script for backup code
-├── main.py # Run the interesting chatbot using the model you downloaded
-├── ollama.py # Main script to run the main pipeline
-├── README.md # This README file
-└── requirements.txt # List of Python dependencies
-```
+- **Ensure you update the `ollama.py` file with your CopyToaster API key before running the script.**

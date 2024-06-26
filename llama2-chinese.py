@@ -1,6 +1,7 @@
 import requests
 import json
 from llama_index.core import PromptTemplate
+# from googletrans import Translator
 
 # Step 1: Generate a prompt using the API
 def generate_prompt(model, prompt, stream=False):
@@ -78,6 +79,8 @@ def main():
     # Generate the final prompt using the formatted template
     final_response = generate_prompt(model, formatted_prompt)
     print("Final Response:\n", final_response)
+    # translator = Translator()
+    # translator.translate(final_response, dest='zh-TW')
 
 if __name__ == "__main__":
     main()
