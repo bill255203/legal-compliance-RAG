@@ -39,17 +39,16 @@ def query_vector_database(query, top_k=5):
         outputs = vector_model(**inputs)
     query_vector = outputs.last_hidden_state.mean(dim=1).squeeze().numpy().tolist()  # Convert to list
     response = index.query(vector=query_vector, top_k=top_k)
-    return [match['id'] for match in response['matches']]
+    return [int(match['id']) for match in response['matches']]  # Convert to integer indices
 
 # Function to generate prompt using retrieved documents
 def generate_prompt_with_context(retrieved_docs, query):
     context = ' '.join([doc['content'] for doc in retrieved_docs])
     template = (
-        "We have provided context information below. \n"
         "---------------------\n"
         "{context_str}"
         "\n---------------------\n"
-        "Given this information, please answer the question: {query_str}\n"
+        "有鑑於我們提供了以下法律文件的資訊, 請回答: {query_str}\n"
     )
     qa_template = PromptTemplate(template)
     return qa_template.format(context_str=context, query_str=query)
@@ -68,8 +67,8 @@ def query_llm(model, prompt):
 
 # Main function to demonstrate the process
 def main():
-    query = "What is the regulation about the management of temple properties?"
-    retrieved_ids = query_vector_database(query, top_k=5)
+    query = "對於寺廟財產的管理，應該有何規定？"
+    retrieved_indices = query_vector_database(query, top_k=5)
 
     # Load documents to get the content for the retrieved IDs
     documents = []
@@ -82,7 +81,7 @@ def main():
                         data = json.load(f)
                         content = extract_content(data)
                         documents.append({
-                            'id': file_path,
+                            'id': file_path.replace("\\", "/"),  # Ensure consistent format
                             'name': data.get('name', 'Unknown'),
                             'date': data.get('date', 'Unknown'),
                             'isAbolished': data.get('isAbolished', False),
@@ -92,8 +91,9 @@ def main():
                     except (KeyError, TypeError, IndexError, json.JSONDecodeError) as e:
                         print(f"Error processing file {file_path}: {e}")
 
-    retrieved_docs = [doc for doc in documents if doc['id'] in retrieved_ids]
+    retrieved_docs = [documents[i] for i in retrieved_indices]  # Map indices to document entries
     prompt = generate_prompt_with_context(retrieved_docs, query)
+    # print("Prompt:\n", prompt)
     
     # Query the LLM (change model to your desired model if necessary)
     final_response = query_llm(QUERY_MODEL_NAME, prompt)
