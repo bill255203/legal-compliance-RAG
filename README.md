@@ -39,11 +39,14 @@ python -m venv .venv
 ### 1.3. Activate the Virtual Environment
 
 - On Windows:
+
   ```bash
   .\\.venv\\Scripts\\activate
 
   ```
+
 - On macOS/Linux:
+
   ```bash
   source .venv/bin/activate
 
@@ -111,12 +114,19 @@ C:\\Users\\USER\\AppData\\Roaming\\Python\\Python311\\Scripts\\streamlit run mai
 
 ```
 
-### 4.3. Run the New Vectorization Script (`vectorize-docs.py`)
+### 4.3. Run the New Vectorization Script (`create-faiss.py`)
 
-- **The `vectorize-docs.py` script handles document vectorization and should be run to set up the vector database.**
+- **The `create-faiss.py` script handles document vectorization and should be run to set up the vector database.**
 
 ```bash
-python vectorize-docs.py
+python create-faiss.py
+```
+
+### 4.4. Run the New Pinecone Script
+
+```bash
+python create-pinecone.py
+python pinecone-query.py
 ```
 
 ### Additional Notes
