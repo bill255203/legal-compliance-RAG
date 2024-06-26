@@ -1,15 +1,14 @@
 import os
-
-# Set the environment variable to bypass the OpenMP runtime issue
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
-# Rest of your script
 import json
 import numpy as np
 from transformers import AutoTokenizer, AutoModel
 import faiss
 import torch
 import requests
+import pickle
+
+# Set the environment variable to bypass the OpenMP runtime issue
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # Custom PromptTemplate class
 class PromptTemplate:
@@ -23,6 +22,8 @@ class PromptTemplate:
 LAW_DIR = 'C:\\law'
 VECTOR_MODEL_NAME = 'sentence-transformers/all-MiniLM-L6-v2'
 QUERY_MODEL_NAME = 'llama2-chinese'  # You can change this to your preferred model
+INDEX_FILE = 'faiss_index.bin'
+METADATA_FILE = 'metadata.pkl'
 
 # Load the tokenizer and model for vectorization
 vector_tokenizer = AutoTokenizer.from_pretrained(VECTOR_MODEL_NAME)
@@ -77,6 +78,19 @@ def vectorize_documents(documents):
         embeddings.append(outputs.last_hidden_state.mean(dim=1).squeeze().numpy())
     return np.array(embeddings), documents
 
+# Function to save the FAISS index and metadata
+def save_faiss_index(index, metadata, index_file, metadata_file):
+    faiss.write_index(index, index_file)
+    with open(metadata_file, 'wb') as f:
+        pickle.dump(metadata, f)
+
+# Function to load the FAISS index and metadata
+def load_faiss_index(index_file, metadata_file):
+    index = faiss.read_index(index_file)
+    with open(metadata_file, 'rb') as f:
+        metadata = pickle.load(f)
+    return index, metadata
+
 # Read and preprocess JSON files
 documents = read_json_files(LAW_DIR)
 
@@ -87,6 +101,9 @@ document_vectors, document_metadata = vectorize_documents(documents)
 dimension = document_vectors.shape[1]
 index = faiss.IndexFlatL2(dimension)
 index.add(document_vectors)
+
+# Save the FAISS index and metadata
+save_faiss_index(index, document_metadata, INDEX_FILE, METADATA_FILE)
 
 # Function to query the vector database and retrieve relevant documents
 def query_vector_database(query, top_k=5):
@@ -124,6 +141,18 @@ def query_llm(model, prompt):
 
 # Main function to demonstrate the process
 def main():
+    if not os.path.exists(INDEX_FILE) or not os.path.exists(METADATA_FILE):
+        print("Creating and saving FAISS index...")
+        documents = read_json_files(LAW_DIR)
+        document_vectors, document_metadata = vectorize_documents(documents)
+        dimension = document_vectors.shape[1]
+        index = faiss.IndexFlatL2(dimension)
+        index.add(document_vectors)
+        save_faiss_index(index, document_metadata, INDEX_FILE, METADATA_FILE)
+    else:
+        print("Loading FAISS index from disk...")
+        index, document_metadata = load_faiss_index(INDEX_FILE, METADATA_FILE)
+
     query = "What is the regulation about the management of temple properties?"
     retrieved_docs = query_vector_database(query, top_k=5)
     prompt = generate_prompt_with_context(retrieved_docs, query)
