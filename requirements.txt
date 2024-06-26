@@ -5,3 +5,6 @@ torch
 requests
 httpx==0.18.2
 openai
+python-dotenv
+llama-index
+pinecone-client
