@@ -3,8 +3,10 @@ faiss-cpu
 numpy
 torch
 requests
-httpx==0.18.2
+httpx==0.23.0
 openai
 python-dotenv
 llama-index
 pinecone-client
+google-cloud-translate
+translate

@@ -4,6 +4,7 @@ import numpy as np
 from transformers import AutoTokenizer, AutoModel
 import torch
 from pinecone import Pinecone, ServerlessSpec
+from deep_translator import GoogleTranslator
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -75,14 +76,21 @@ def extract_content(data):
         pass
     return ' '.join(content)
 
+# Function to translate content using GoogleTranslator
+def translate_content(content, target_language='en'):
+    translator = GoogleTranslator(source='auto', target=target_language)
+    return translator.translate(content)
+
 # Function to vectorize content using transformer model
 def vectorize_documents(documents):
     embeddings = []
     for doc in documents:
-        inputs = vector_tokenizer(doc['content'], return_tensors='pt', truncation=True, padding=True)
+        translated_content = translate_content(doc['content'])
+        inputs = vector_tokenizer(translated_content, return_tensors='pt', truncation=True, padding=True)
         with torch.no_grad():
             outputs = vector_model(**inputs)
         embeddings.append(outputs.last_hidden_state.mean(dim=1).squeeze().numpy())
+        doc['content'] = translated_content  # Optionally store the translated content back in the document
     return np.array(embeddings), documents
 
 # Read and preprocess JSON files
