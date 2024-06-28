@@ -8,6 +8,7 @@ import requests
 from dotenv import load_dotenv
 from translate import Translator
 import time
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -44,16 +45,35 @@ def query_vector_database(query, top_k=5):
     return [int(match['id']) for match in response['matches']]  # Convert to integer indices
 
 # Function to chunk large text
-def chunk_text(text, chunk_size=50):
-    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+def smart_chunk_text(text, chunk_size=512, overlap=50):
+    # Split the text into sentences
+    if re.search('[\u4e00-\u9fff]', text):  # Check if the text is Chinese
+        sentences = re.split(r'(?<=。)', text)
+    else:  # Assume English text
+        sentences = re.split(r'(?<=[.!?]) +', text)
+
+    chunks = []
+    current_chunk = ""
+    
+    for sentence in sentences:
+        if len(current_chunk) + len(sentence) + 1 > chunk_size:
+            chunks.append(current_chunk)
+            current_chunk = sentence
+        else:
+            current_chunk += sentence if current_chunk == "" else ' ' + sentence
+    
+    if current_chunk:
+        chunks.append(current_chunk)
+    
+    return chunks
 
 # Function to translate content using Translator and chunking if necessary
 def translate_content(content, to_lang="en", from_lang="zh-TW"):
     translator = Translator(to_lang=to_lang, from_lang=from_lang)
-    chunks = chunk_text(content)
+    chunks = smart_chunk_text(content)
     translated_chunks = []
     for chunk in chunks:
-        print(chunk)
+        print(f"Translating chunk: {chunk[:30]}...")  # Debugging: show start of the chunk
         try:
             translated_chunk = translator.translate(chunk)
             translated_chunks.append(translated_chunk)
@@ -89,6 +109,14 @@ def query_llm(model, prompt):
         print("Error:", response.status_code, response.text)
         return None
 
+# Example translation from English to Chinese
+def translate_content_english_to_chinese(content):
+    return translate_content(content, to_lang="zh-TW", from_lang="en")
+
+# Example translation from Chinese to English
+def translate_content_chinese_to_english(content):
+    return translate_content(content, to_lang="en", from_lang="zh-TW")
+
 # Main function to demonstrate the process
 def main():
     query = "What is the regulation about the management of temple properties?"
@@ -123,7 +151,7 @@ def main():
     final_response = query_llm(QUERY_MODEL_NAME, prompt)
     print("Final Response:\n", final_response)
     if final_response:
-        translated_final_response = translate_content(final_response, to_lang="zh-TW", from_lang="en")
+        translated_final_response = translate_content_english_to_chinese(final_response)
         print("Translated Final Response:\n", translated_final_response)
 
 def extract_content(data):
