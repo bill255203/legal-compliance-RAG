@@ -6,7 +6,9 @@ requests
 httpx==0.23.0
 openai
 python-dotenv
-llama-index
 pinecone-client
 google-cloud-translate
 translate
+groq
+nltk
+deepl
