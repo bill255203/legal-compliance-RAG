@@ -1,10 +1,8 @@
 import os
 import json
-import numpy as np
 from transformers import AutoTokenizer, AutoModel
 import torch
 from pinecone import Pinecone
-import requests
 from dotenv import load_dotenv
 import nltk
 from nltk.tokenize import sent_tokenize
