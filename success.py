@@ -6,10 +6,11 @@ import torch
 from pinecone import Pinecone
 import requests
 from dotenv import load_dotenv
-import deepl
 import nltk
 from nltk.tokenize import sent_tokenize
-import groq
+from google.cloud import translate_v2 as translate
+from google.oauth2 import service_account
+import groq  # Add this import statement
 
 nltk.download('punkt')
 
@@ -17,10 +18,16 @@ nltk.download('punkt')
 load_dotenv()
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-DEEPL_AUTH_KEY = os.getenv("DEEPL_AUTH_KEY")
+GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+# Set the access key for Groq API
+os.environ["GROQ_API_KEY"] = GROQ_API_KEY
+
 pc = Pinecone(api_key=PINECONE_API_KEY)
-client = groq.Client(api_key=GROQ_API_KEY)
-translator = deepl.Translator(DEEPL_AUTH_KEY)
+client = groq.Client(api_key=GROQ_API_KEY)  # Correct initialization
+
+# Initialize Google Cloud Translation client
+credentials = service_account.Credentials.from_service_account_file(GOOGLE_APPLICATION_CREDENTIALS)
+translate_client = translate.Client(credentials=credentials)
 
 # Custom PromptTemplate class
 class PromptTemplate:
@@ -43,7 +50,7 @@ index_name = 'law-documents'
 index = pc.Index(index_name)
 
 # Function to query the vector database and retrieve relevant documents
-def query_vector_database(query, top_k=1):
+def query_vector_database(query, top_k=2):
     inputs = vector_tokenizer(query, return_tensors='pt', truncation=True, padding=True)
     with torch.no_grad():
         outputs = vector_model(**inputs)
@@ -51,19 +58,22 @@ def query_vector_database(query, top_k=1):
     response = index.query(vector=query_vector, top_k=top_k)
     return [int(match['id']) for match in response['matches']]  # Convert to integer indices
 
-# Function to translate content using DeepL API
-def translate_content(content, to_lang="EN", from_lang="ZH"):
+
+# Function to translate content using Google Cloud Translation API
+def translate_content(content, target_lang="en", source_lang="zh"):
     sentences = sent_tokenize(content)
     translated_sentences = []
-    batch_size = 50  # Number of sentences to send in each batch
+    batch_size = 100  # Adjust this based on your needs and API limits
+
     for i in range(0, len(sentences), batch_size):
         batch = sentences[i:i+batch_size]
         try:
-            result = translator.translate_text(batch, target_lang=to_lang, source_lang=from_lang)
-            translated_sentences.extend([res.text for res in result])
+            results = translate_client.translate(batch, target_language=target_lang, source_language=source_lang)
+            translated_sentences.extend([result['translatedText'] for result in results])
         except Exception as e:
             print(f"Error translating batch: {e}")
             translated_sentences.extend(batch)  # Fallback to original batch if translation fails
+
     return ' '.join(translated_sentences)
 
 # Function to generate prompt using retrieved documents
@@ -98,10 +108,11 @@ def query_groq_api(model, prompt):
     )
     return response.choices[0].message.content
 
+# Update the main function to use the new translate_content function
 # Main function to demonstrate the process
 def main():
     query = "What is the regulation about the management of temple properties?"
-    retrieved_indices = query_vector_database(query, top_k=1)
+    retrieved_indices = query_vector_database(query, top_k=2)
 
     # Load documents to get the content for the retrieved IDs
     documents = []
@@ -133,7 +144,7 @@ def main():
     print("Final Response:\n", final_response)
     
     if final_response:
-        translated_final_response = translate_content(final_response, to_lang="ZH", from_lang="EN")
+        translated_final_response = translate_content(final_response, target_lang="zh-TW", source_lang="en")
         print("Translated Final Response:\n", translated_final_response)
 
 def extract_content(data):

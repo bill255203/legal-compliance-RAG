@@ -7,7 +7,8 @@ httpx==0.23.0
 openai
 python-dotenv
 pinecone-client
-google-cloud-translate
+google-cloud-translate==2.0.1
+google-auth
 translate
 groq
 nltk
