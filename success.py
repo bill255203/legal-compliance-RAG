@@ -114,7 +114,7 @@ def main():
 
     # Load documents to get the content for the retrieved IDs
     documents = []
-    for root, dirs, files in os.walk('C:\\law'):
+    for root, dirs, files in os.walk('C:\\laws'):
         for file in files:
             if file.endswith('.json'):
                 file_path = os.path.join(root, file)
