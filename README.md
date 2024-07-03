@@ -4,6 +4,12 @@ This project demonstrates a pipeline to generate a prompt using a Language Learn
 
 ## Setup Instructions
 
+### PreSetup: Retrieve and Prepare Laws.zip File
+
+1. Download the laws.zip file from the official provided documents.
+2. Unzip the laws.zip file into the C:// directory.
+3. Warning: Leave only the first 5 to 10 folders in the unzipped laws folder and delete the rest to avoid incurring cost.
+
 ### 1. Set Up a Google Cloud Project
 
 ### 1.1. Create a Google Cloud Project:
