@@ -142,19 +142,26 @@ query = st.text_input("Enter your legal compliance question:")
 if query:
     with st.spinner("Processing your query..."):
         try:
-            translated_query = translate_content(query, source_lang="zh-TW", target_lang="en")
-            retrieved_indices = query_vector_database(translated_query, top_k=2)
-            retrieved_docs = [documents[i] for i in retrieved_indices]
-            prompt = generate_prompt_with_context(retrieved_docs, translated_query)
+            # Translate user query to English for processing
+            english_query = translate_content(query, source_lang="zh-TW", target_lang="en")
             
-            st.subheader("Generated Prompt:")
+            # Retrieve documents using the original Chinese query
+            retrieved_indices = query_vector_database(query, top_k=2)
+            retrieved_docs = [documents[i] for i in retrieved_indices]
+            
+            # Generate prompt with translated context and English query
+            prompt = generate_prompt_with_context(retrieved_docs, english_query)
+            
+            st.subheader("Generated Prompt (English):")
             st.text(prompt)
             
+            # Query Groq API with English prompt
             response = query_groq_api(QUERY_MODEL_NAME, prompt)
             
             st.subheader("Groq API Response (English):")
             st.write(response)
             
+            # Translate response back to Chinese
             translated_response = translate_content(response, target_lang="zh-TW", source_lang="en")
             
             st.subheader("Translated Response (Traditional Chinese):")
