@@ -108,10 +108,16 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/service-account-key.json
 
 ### 4. Run the Scripts
 
-### 4.1. Run the Pinecone Script
+### 4.1. Prepare the Pinecone Data
 
 ```bash
 python create-pinecone.py
-python success.py
+
+```
+
+### 4.2. Use the Streamlit Application
+
+```bash
+streamlit run app.py
 
 ```
