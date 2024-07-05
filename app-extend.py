@@ -131,6 +131,10 @@ chatroom = st.sidebar.radio("Select Chatroom", ("Legal Document Drafting", "Lega
 
 st.title(f"{chatroom} Chatroom")
 
+# Initialize conversation state
+if 'conversation' not in st.session_state:
+    st.session_state.conversation = []
+
 # Define different templates for each chatroom
 templates = {
     "Legal Document Drafting": (
@@ -159,8 +163,13 @@ templates = {
 # Load documents
 documents = load_documents()
 
+# Display conversation history
+for exchange in st.session_state.conversation:
+    st.write(f"**You:** {exchange['question']}")
+    st.write(f"**Response:** {exchange['response']}")
+
 # User input
-query = st.text_input(f"Enter your {chatroom.lower()} question:")
+query = st.text_input("Enter your legal compliance question:", key="input_box")
 
 if query:
     with st.spinner("Processing your query..."):
@@ -182,6 +191,12 @@ if query:
             
             st.subheader("Translated Response (Traditional Chinese):")
             st.write(translated_response)
+            
+            # Update conversation history
+            st.session_state.conversation.append({
+                "question": query,
+                "response": translated_response
+            })
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
             st.write("Please try again or contact support if the problem persists.")
