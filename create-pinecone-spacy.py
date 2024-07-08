@@ -21,6 +21,9 @@ VECTOR_MODEL_NAME = 'sentence-transformers/all-MiniLM-L6-v2'
 vector_tokenizer = AutoTokenizer.from_pretrained(VECTOR_MODEL_NAME)
 vector_model = AutoModel.from_pretrained(VECTOR_MODEL_NAME)
 
+# Load spaCy model for NER and segmentation
+nlp = spacy.load("en_core_web_sm")
+
 # Create Pinecone index
 index_name = 'law-documents'
 dimension = 384  # Replace with the dimension of your embeddings
@@ -36,9 +39,6 @@ if index_name not in pc.list_indexes():
     )
 
 index = pc.Index(index_name)
-
-# Load spaCy model for NER
-nlp = spacy.load("en_core_web_sm")
 
 # Function to read and preprocess JSON files
 def read_json_files(directory):
@@ -85,11 +85,13 @@ def translate_content(content, target_language='en'):
     translator = GoogleTranslator(source='auto', target=target_language)
     return translator.translate(content)
 
-# Function to perform NER using spaCy
-def perform_ner(documents):
+# Function to perform segmentation and NER using spaCy
+def segment_and_ner(documents):
     for doc in documents:
         spacy_doc = nlp(doc['content'])
+        sentences = [sent.text for sent in spacy_doc.sents]
         entities = [(ent.text, ent.label_) for ent in spacy_doc.ents]
+        doc['sentences'] = sentences
         doc['entities'] = entities
     return documents
 
@@ -108,8 +110,8 @@ def vectorize_documents(documents):
 # Read and preprocess JSON files
 documents = read_json_files(LAW_DIR)
 
-# Perform Named Entity Recognition (NER)
-documents = perform_ner(documents)
+# Perform segmentation and NER
+documents = segment_and_ner(documents)
 
 # Vectorize documents
 document_vectors, document_metadata = vectorize_documents(documents)

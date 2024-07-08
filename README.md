@@ -118,6 +118,16 @@ python create-pinecone.py
 ### 4.2. Use the Streamlit Application
 
 ```bash
-streamlit run app.py
+streamlit run app-extend.py
 
 ```
+
+### 4.3. Ask questions
+
+```bash
+   關於寺廟的管理辦法有什麼規定
+```
+
+## Notes for me
+
+create-pinecone-spacy success but app-extend-spacy failed

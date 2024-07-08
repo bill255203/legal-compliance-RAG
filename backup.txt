@@ -12,3 +12,4 @@ translate
 groq
 nltk
 deepl
+spacy
