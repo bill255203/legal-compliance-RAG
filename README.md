@@ -118,7 +118,7 @@ python create-pinecone.py
 ### 4.2. Use the Streamlit Application
 
 ```bash
-streamlit run app-extend.py
+streamlit run app.py
 
 ```
 
@@ -130,4 +130,5 @@ streamlit run app-extend.py
 
 ## Notes for me
 
-create-pinecone-spacy success but app-extend-spacy failed
+create-pinecone-spacy success but app-spacy failed
+previous chat pages need revision

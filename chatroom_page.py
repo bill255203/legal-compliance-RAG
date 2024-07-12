@@ -1,4 +1,5 @@
 import streamlit as st
+import pyperclip
 import os
 import json
 from transformers import AutoTokenizer, AutoModel
@@ -11,7 +12,6 @@ from google.cloud import translate_v2 as translate
 from google.oauth2 import service_account
 import groq
 import requests
-import pyperclip
 
 nltk.download('punkt')
 
@@ -30,6 +30,7 @@ translate_client = translate.Client(credentials=credentials)
 
 # Constants
 VECTOR_MODEL_NAME = 'sentence-transformers/all-MiniLM-L6-v2'
+QUERY_MODEL_NAME = 'llama3-8b-8192'
 INDEX_NAME = 'law-documents'
 
 # Load models
@@ -141,97 +142,114 @@ def extract_content(data):
         pass
     return ' '.join(content)
 
-# Streamlit UI
-st.sidebar.title("Legal Compliance Chatrooms")
+def save_conversation():
+    if st.session_state.current_conversation:
+        if 'previous_conversations' not in st.session_state:
+            st.session_state.previous_conversations = []
+        st.session_state.previous_conversations.append(st.session_state.current_conversation)
+        st.session_state.current_conversation = []
+        st.success("Conversation saved! You can start a new one now.")
+def chatroom():
+    st.sidebar.title("Legal Compliance Chatrooms")
 
-# Sidebar options for different chatrooms
-chatroom = st.sidebar.selectbox("Select Chatroom", ("Legal Document Drafting", "Legal Advice", "Legal Document Review"))
+    # Sidebar options for different chatrooms
+    chatroom = st.sidebar.selectbox("Select Chatroom", ("Legal Document Drafting", "Legal Advice", "Legal Document Review"))
 
-# Model selection dropdown
-selected_model = st.sidebar.selectbox("Select Model", models)
+    # Model selection dropdown
+    selected_model = st.sidebar.selectbox("Select Model", models)
 
-st.title(f"{chatroom} Chatroom")
+    st.title(f"{chatroom} Chatroom")
 
-# Initialize conversation state
-if 'conversation' not in st.session_state:
-    st.session_state.conversation = []
+    # Initialize current conversation if not already present
+    if 'current_conversation' not in st.session_state:
+        st.session_state.current_conversation = []
 
-# Define different templates for each chatroom
-templates = {
-    "Legal Document Drafting": (
-        "We have provided context information below. \n"
-        "---------------------\n"
-        "{context_str}"
-        "\n---------------------\n"
-        "Draft a legal document about {query_str} that follows the context above.\n"
-    ),
-    "Legal Advice": (
-        "We have provided context information below. \n"
-        "---------------------\n"
-        "{context_str}"
-        "\n---------------------\n"
-        "Provide legal advice based on the following query: {query_str}\n"
-    ),
-    "Legal Document Review": (
-        "We have provided context information below. \n"
-        "---------------------\n"
-        "{context_str}"
-        "\n---------------------\n"
-        "Review the legal document and provide feedback for the following query: {query_str}\n"
-    )
-}
+    # Display current conversation history
+    for exchange in st.session_state.current_conversation:
+        st.write(f"**You:** {exchange['question']}")
+        st.write(f"**Response:** {exchange['response']}")
 
-# Load documents
-documents = load_documents()
+    # Define different templates for each chatroom
+    templates = {
+        "Legal Document Drafting": (
+            "We have provided context information below. \n"
+            "---------------------\n"
+            "{context_str}"
+            "\n---------------------\n"
+            "Draft a legal document about {query_str} that follows the context above.\n"
+        ),
+        "Legal Advice": (
+            "We have provided context information below. \n"
+            "---------------------\n"
+            "{context_str}"
+            "\n---------------------\n"
+            "Provide legal advice based on the following query: {query_str}\n"
+        ),
+        "Legal Document Review": (
+            "We have provided context information below. \n"
+            "---------------------\n"
+            "{context_str}"
+            "\n---------------------\n"
+            "Review the legal document and provide feedback for the following query: {query_str}\n"
+        )
+    }
 
-# Display conversation history
-for exchange in st.session_state.conversation:
-    st.write(f"**You:** {exchange['question']}")
-    st.write(f"**Response:** {exchange['response']}")
+    # Load documents
+    documents = load_documents()
 
-# User input
-query = st.text_input("Enter your legal compliance question:", key="input_box")
+    # User input
+    query = st.text_input("Enter your legal compliance question:", key="input_box")
 
-if query:
-    with st.spinner("Processing your query..."):
-        try:
-            translated_query = translate_content(query, source_lang="zh-TW", target_lang="en")
-            retrieved_indices = query_vector_database(translated_query, top_k=2)
-            retrieved_docs = [documents[i] for i in retrieved_indices]
-            prompt = generate_prompt_with_context(retrieved_docs, translated_query, templates[chatroom])
-            
-            st.subheader("Generated Prompt:")
-            st.text(prompt)
-            
-            response = query_groq_api(selected_model, prompt)
-            
-            # Display the Groq API response and add a copy button
-            st.subheader("Groq API Response (English):")
-            st.write(response)
+    if query:
+        with st.spinner("Processing your query..."):
+            try:
+                translated_query = translate_content(query, source_lang="zh-TW", target_lang="en")
+                retrieved_indices = query_vector_database(translated_query, top_k=2)
+                retrieved_docs = [documents[i] for i in retrieved_indices]
+                prompt = generate_prompt_with_context(retrieved_docs, translated_query, templates[chatroom])
+                
+                st.subheader("Generated Prompt:")
+                st.text(prompt)
+                
+                response = query_groq_api(selected_model, prompt)
+                
+                st.subheader("Groq API Response (English):")
+                st.write(response)
+                
+                # Add a copy button
+                if st.button("Copy to Clipboard"):
+                    pyperclip.copy(response)
+                    st.success("Response copied to clipboard!")
+                
+                translated_response = translate_content(response, target_lang="zh-TW", source_lang="en")
+                
+                st.subheader("Translated Response (Traditional Chinese):")
+                st.write(translated_response)
+                
+                # Add a copy button for translated response
+                if st.button("Copy Translated Response to Clipboard"):
+                    pyperclip.copy(translated_response)
+                    st.success("Translated response copied to clipboard!")
+                
+                # Update current conversation history
+                st.session_state.current_conversation.append({
+                    "question": query,
+                    "response": translated_response
+                })
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
+                st.write("Please try again or contact support if the problem persists.")
 
-            # Add a copy button
-            if st.button("Copy to Clipboard"):
-                pyperclip.copy(response)
-                st.success("Response copied to clipboard!")
+    st.button("Save Conversation and Start New", on_click=save_conversation)
+    # Add a button to save the current conversation and start a new one
+    # if st.button("Save Conversation and Start New"):
+    #     if st.session_state.current_conversation:
+    #         if 'previous_conversations' not in st.session_state:
+    #             st.session_state.previous_conversations = []
+    #         st.session_state.previous_conversations.append(st.session_state.current_conversation)
+    #         st.session_state.current_conversation = []
+    #         st.success("Conversation saved! You can start a new one now.")
+    #         st.rerun()
 
-            translated_response = translate_content(response, target_lang="zh-TW", source_lang="en")
-
-            st.subheader("Translated Response (Traditional Chinese):")
-            st.write(translated_response)
-
-            # Add a copy button for translated response
-            if st.button("Copy Translated Response to Clipboard"):
-                pyperclip.copy(translated_response)
-                st.success("Translated response copied to clipboard!")
-
-            # Update conversation history
-            st.session_state.conversation.append({
-                "question": query,
-                "response": translated_response
-            })
-        except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
-            st.write("Please try again or contact support if the problem persists.")
-
-st.sidebar.title("About")
-st.sidebar.info("This is a RAG system for legal compliance questions using Groq API and Pinecone vector database.")
+    st.sidebar.title("About")
+    st.sidebar.info("This is a RAG system for legal compliance questions using Groq API and Pinecone vector database.")
