@@ -8,3 +8,5 @@ groq
 nltk
 sentence-transformers
 streamlit
+requests
+pyperclip

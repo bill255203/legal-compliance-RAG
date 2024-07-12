@@ -10,6 +10,8 @@ from nltk.tokenize import sent_tokenize
 from google.cloud import translate_v2 as translate
 from google.oauth2 import service_account
 import groq
+import requests
+import pyperclip
 
 nltk.download('punkt')
 
@@ -28,7 +30,6 @@ translate_client = translate.Client(credentials=credentials)
 
 # Constants
 VECTOR_MODEL_NAME = 'sentence-transformers/all-MiniLM-L6-v2'
-QUERY_MODEL_NAME = 'llama3-8b-8192'
 INDEX_NAME = 'law-documents'
 
 # Load models
@@ -42,6 +43,23 @@ class PromptTemplate:
 
     def format(self, context_str, query_str):
         return self.template.format(context_str=context_str, query_str=query_str)
+
+def get_groq_models():
+    url = "https://api.groq.com/openai/v1/models"
+    headers = {
+        "Authorization": f"Bearer {os.getenv('GROQ_API_KEY')}"
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        models = [model['id'] for model in data['data']]
+        return models
+    else:
+        st.error("Failed to retrieve models from Groq API")
+        return []
+
+# Fetch the models at the start
+models = get_groq_models()
 
 def query_vector_database(query, top_k=2):
     inputs = vector_tokenizer(query, return_tensors='pt', truncation=True, padding=True)
@@ -127,7 +145,10 @@ def extract_content(data):
 st.sidebar.title("Legal Compliance Chatrooms")
 
 # Sidebar options for different chatrooms
-chatroom = st.sidebar.radio("Select Chatroom", ("Legal Document Drafting", "Legal Advice", "Legal Document Review"))
+chatroom = st.sidebar.selectbox("Select Chatroom", ("Legal Document Drafting", "Legal Advice", "Legal Document Review"))
+
+# Model selection dropdown
+selected_model = st.sidebar.selectbox("Select Model", models)
 
 st.title(f"{chatroom} Chatroom")
 
@@ -182,16 +203,27 @@ if query:
             st.subheader("Generated Prompt:")
             st.text(prompt)
             
-            response = query_groq_api(QUERY_MODEL_NAME, prompt)
+            response = query_groq_api(selected_model, prompt)
             
+            # Display the Groq API response and add a copy button
             st.subheader("Groq API Response (English):")
             st.write(response)
-            
+
+            # Add a copy button
+            if st.button("Copy to Clipboard"):
+                pyperclip.copy(response)
+                st.success("Response copied to clipboard!")
+
             translated_response = translate_content(response, target_lang="zh-TW", source_lang="en")
-            
+
             st.subheader("Translated Response (Traditional Chinese):")
             st.write(translated_response)
-            
+
+            # Add a copy button for translated response
+            if st.button("Copy Translated Response to Clipboard"):
+                pyperclip.copy(translated_response)
+                st.success("Translated response copied to clipboard!")
+
             # Update conversation history
             st.session_state.conversation.append({
                 "question": query,

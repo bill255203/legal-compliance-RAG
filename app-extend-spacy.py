@@ -7,9 +7,6 @@ from pinecone import Pinecone
 from dotenv import load_dotenv
 import nltk
 from nltk.tokenize import sent_tokenize
-from google.cloud import translate_v2 as translate
-from google.oauth2 import service_account
-import groq
 import spacy
 
 nltk.download('punkt')
@@ -17,19 +14,15 @@ nltk.download('punkt')
 # Load environment variables
 load_dotenv()
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-os.environ["GROQ_API_KEY"] = GROQ_API_KEY
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GOOGLE_APPLICATION_CREDENTIALS
 
 # Initialize clients
 pc = Pinecone(api_key=PINECONE_API_KEY)
-groq_client = groq.Client(api_key=GROQ_API_KEY)
 credentials = service_account.Credentials.from_service_account_file(GOOGLE_APPLICATION_CREDENTIALS)
-translate_client = translate.Client(credentials=credentials)
 
 # Constants
 VECTOR_MODEL_NAME = 'sentence-transformers/all-MiniLM-L6-v2'
-QUERY_MODEL_NAME = 'llama3-8b-8192'
 INDEX_NAME = 'law-documents'
 
 # Load models
@@ -55,38 +48,24 @@ def query_vector_database(query, top_k=2):
     response = index.query(vector=query_vector, top_k=top_k, include_metadata=True)
     return response['matches']
 
-def translate_content(content, target_lang="en", source_lang="zh"):
-    sentences = sent_tokenize(content)
-    translated_sentences = []
-    batch_size = 100
-
-    for i in range(0, len(sentences), batch_size):
-        batch = sentences[i:i+batch_size]
-        try:
-            results = translate_client.translate(batch, target_language=target_lang, source_language=source_lang)
-            translated_sentences.extend([result['translatedText'] for result in results])
-        except Exception as e:
-            st.error(f"Error translating batch: {e}")
-            translated_sentences.extend(batch)
-
-    return ' '.join(translated_sentences)
-
 def generate_prompt_with_context(retrieved_docs, query, template):
     context = ' '.join([doc['metadata']['content'] for doc in retrieved_docs])
-    translated_context = translate_content(context)
+    # translated_context = translate_content(context)  # Commenting out for debugging
+    translated_context = context  # Directly use context without translation
     
     qa_template = PromptTemplate(template)
     return qa_template.format(context_str=translated_context, query_str=query)
 
-def query_groq_api(model, prompt):
-    response = groq_client.chat.completions.create(
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": prompt},
-        ],
-        model=model,
-    )
-    return response.choices[0].message.content
+# Commenting out Groq API call for debugging
+# def query_groq_api(model, prompt):
+#     response = groq_client.chat.completions.create(
+#         messages=[
+#             {"role": "system", "content": "You are a helpful assistant."},
+#             {"role": "user", "content": prompt},
+#         ],
+#         model=model,
+#     )
+#     return response.choices[0].message.content
 
 def perform_ner(text):
     doc = nlp(text)
@@ -149,7 +128,8 @@ if query:
             st.subheader("Named Entities in Query:")
             st.write(query_entities)
 
-            translated_query = translate_content(query, source_lang="zh-TW", target_lang="en")
+            # translated_query = translate_content(query, source_lang="zh-TW", target_lang="en")  # Commenting out for debugging
+            translated_query = query  # Directly use query without translation
             retrieved_docs = query_vector_database(translated_query, top_k=2)
             
             st.subheader("Retrieved Documents:")
@@ -166,12 +146,14 @@ if query:
             st.subheader("Generated Prompt:")
             st.text(prompt)
             
-            response = query_groq_api(QUERY_MODEL_NAME, prompt)
+            # response = query_groq_api(QUERY_MODEL_NAME, prompt)  # Commenting out for debugging
+            response = "This is a mock response."  # Mock response for debugging
             
             st.subheader("Groq API Response (English):")
             st.write(response)
             
-            translated_response = translate_content(response, target_lang="zh-TW", source_lang="en")
+            # translated_response = translate_content(response, target_lang="zh-TW", source_lang="en")  # Commenting out for debugging
+            translated_response = response  # Directly use response without translation
             
             st.subheader("Translated Response (Traditional Chinese):")
             st.write(translated_response)
