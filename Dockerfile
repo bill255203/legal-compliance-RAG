@@ -42,16 +42,14 @@ COPY --from=build-stage /app /app
 # Copy the Google credentials file to the container
 COPY superchatbill-0e602de15713.json /app/superchatbill-0e602de15713.json
 
-# Ensure the Python interpreter points correctly to the virtual environment
-COPY --from=build-stage /usr/bin/python3.9 /usr/bin/python3.9
-COPY --from=build-stage /usr/lib/python3.9 /usr/lib/python3.9
-RUN ln -sf /usr/bin/python3.9 /usr/bin/python3
-
 # Expose the port Streamlit runs on
 EXPOSE 8501
 
 # Set healthcheck
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
+# Ensure the virtual environment's Python is used
+ENV PATH="/venv/bin:$PATH"
+
 # Run the Streamlit app
-CMD ["/venv/bin/python", "app.py"]
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
