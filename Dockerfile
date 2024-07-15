@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     python3-venv && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file
+# Copy the requirements file first to leverage caching
 COPY requirements.txt .
 
 # Create a virtual environment and install dependencies
@@ -39,6 +39,9 @@ COPY --from=build-stage /venv /venv
 # Copy the necessary application files
 COPY --from=build-stage /app /app
 
+# Ensure the virtual environment's Python is used
+ENV PATH="/venv/bin:$PATH"
+
 # Copy the Google credentials file to the container
 COPY superchatbill-0e602de15713.json /app/superchatbill-0e602de15713.json
 
@@ -48,8 +51,5 @@ EXPOSE 8501
 # Set healthcheck
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
-# Ensure the virtual environment's Python is used
-ENV PATH="/venv/bin:$PATH"
-
 # Run the Streamlit app
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["/venv/bin/streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
