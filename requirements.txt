@@ -1,12 +1,12 @@
-transformers
-torch
 python-dotenv
 pinecone-client
-google-cloud-translate==2.0.1
+google-cloud-translate
 google-auth
 groq
 nltk
-sentence-transformers
-streamlit
+sentence-transformers==0.1.0
+streamlit==1.8.1
 requests
 pyperclip
+torch>=1.0.1
+protobuf<=3.20.3

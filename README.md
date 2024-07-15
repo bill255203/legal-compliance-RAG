@@ -10,7 +10,7 @@ This project demonstrates a pipeline to generate a prompt using a Language Learn
 2. Unzip the laws.zip file into the C:// directory.
 3. Warning: Leave only the first 5 to 10 folders in the unzipped laws folder and delete the rest to avoid incurring cost.
 
-### 1. Set Up a Google Cloud Project
+## 1. Set Up a Google Cloud Project
 
 ### 1.1. Create a Google Cloud Project:
 
@@ -31,19 +31,7 @@ This project demonstrates a pipeline to generate a prompt using a Language Learn
    - Choose JSON as the key type.
    - Click "Create" and download the JSON file.
 
-### 1.3. Add Pinecone API Key
-
-1. Sign up for a Pinecone account `https://www.pinecone.io/`.
-2. Create an API key in the Pinecone dashboard.
-3. Add the API key to your `.env` file as `PINECONE_API_KEY`.
-
-### 1.4. Add Groq API Key
-
-1. Sign up for a Groq account.
-2. Create an API key in the Groq dashboard.
-3. Add the API key to your `.env` file as `GROQ_API_KEY`.
-
-### 2. Set Up Your Local Environment
+## 2. Set Up Your Local Environment
 
 ### 2.1. Git Clone Project
 
@@ -87,7 +75,7 @@ pip install -r requirements.txt
 
 ```
 
-### 3. Configure Environment Variables
+## 3. Configure Environment Variables
 
 ### 3.1. Create a .env File
 
@@ -101,12 +89,23 @@ HIGH_CIVIL_KEY=P7zdKSLg2_vC9Q$)bUFGqtfX6kTcpNJ629
 
 PINECONE_API_KEY=your_pinecone_api_key
 GROQ_API_KEY=your_groq_api_key
-
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/service-account-key.json
 
 ```
 
-### 4. Run the Scripts
+### 3.2. Add Pinecone API Key
+
+1. Sign up for a Pinecone account `https://www.pinecone.io/`.
+2. Create an API key in the Pinecone dashboard.
+3. Add the API key to your `.env` file as `PINECONE_API_KEY`.
+
+### 3.3. Add Groq API Key
+
+1. Sign up for a Groq account.
+2. Create an API key in the Groq dashboard.
+3. Add the API key to your `.env` file as `GROQ_API_KEY`.
+
+## 4. Run the Scripts
 
 ### 4.1. Prepare the Pinecone Data
 
@@ -122,7 +121,16 @@ streamlit run app.py
 
 ```
 
-### 4.3. Ask questions
+## 5. Docker Container Settings (Optional)
+
+```bash
+   docker build -t streamlit-app .
+   docker run -p 8501:8501 --env-file .env streamlit-app
+```
+
+this took me 25 mins
+
+## Ask questions
 
 ```bash
    關於寺廟的管理辦法有什麼規定
