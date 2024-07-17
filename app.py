@@ -3,6 +3,10 @@ from chatroom_page import chatroom
 from previous_chats_page import previous_chats
 import os
 from dotenv import load_dotenv
+from memory_agent import MemoryAgent
+
+# Initialize the MemoryAgent
+memory_agent = MemoryAgent()
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,13 +19,6 @@ GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 # Set Google credentials for the environment
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GOOGLE_APPLICATION_CREDENTIALS
 
-# Initialize session state for conversations if not already present
-if 'previous_conversations' not in st.session_state:
-    st.session_state.previous_conversations = []
-
-if 'current_conversation' not in st.session_state:
-    st.session_state.current_conversation = []
-
 # Read query params to handle tab selection
 default_tab = st.query_params.get("tab", "Chatroom")
 
@@ -30,18 +27,14 @@ tab1, tab2 = st.tabs(["Chatroom", "Previous Chats"])
 
 if default_tab == "Chatroom":
     with tab1:
-        chatroom()
+        chatroom(memory_agent)
     with tab2:
-        previous_chats()
+        previous_chats(memory_agent)
 else:
     with tab1:
-        chatroom()
+        chatroom(memory_agent)
     with tab2:
-        # Store the current conversation before switching to Previous Chats
-        if st.session_state.current_conversation:
-            st.session_state.previous_conversations.append(st.session_state.current_conversation)
-            st.session_state.current_conversation = []
-        previous_chats()
+        previous_chats(memory_agent)
 
 # Update query params when switching tabs
 if tab1:

@@ -149,7 +149,13 @@ def save_conversation():
         st.session_state.previous_conversations.append(st.session_state.current_conversation)
         st.session_state.current_conversation = []
         st.success("Conversation saved! You can start a new one now.")
-def chatroom():
+        
+from memory_agent import MemoryAgent
+
+# Initialize the MemoryAgent (do this outside the chatroom function, perhaps in your main app file)
+memory_agent = MemoryAgent()
+
+def chatroom(memory_agent: MemoryAgent):
     st.sidebar.title("Legal Compliance Chatrooms")
 
     # Sidebar options for different chatrooms
@@ -160,12 +166,8 @@ def chatroom():
 
     st.title(f"{chatroom} Chatroom")
 
-    # Initialize current conversation if not already present
-    if 'current_conversation' not in st.session_state:
-        st.session_state.current_conversation = []
-
-    # Display current conversation history
-    for exchange in st.session_state.current_conversation:
+    # Display conversation history
+    for exchange in memory_agent.get_current_conversation():
         st.write(f"**You:** {exchange['question']}")
         st.write(f"**Response:** {exchange['response']}")
 
@@ -193,10 +195,6 @@ def chatroom():
             "Review the legal document and provide feedback for the following query: {query_str}\n"
         )
     }
-
-    # Load documents
-    documents = load_documents()
-
     # User input
     query = st.text_input("Enter your legal compliance question:", key="input_box")
 
@@ -205,6 +203,10 @@ def chatroom():
             try:
                 translated_query = translate_content(query, source_lang="zh-TW", target_lang="en")
                 retrieved_indices = query_vector_database(translated_query, top_k=2)
+                
+                # Ensure documents are loaded
+                documents = load_documents()
+                
                 retrieved_docs = [documents[i] for i in retrieved_indices]
                 prompt = generate_prompt_with_context(retrieved_docs, translated_query, templates[chatroom])
                 
@@ -231,25 +233,22 @@ def chatroom():
                     pyperclip.copy(translated_response)
                     st.success("Translated response copied to clipboard!")
                 
-                # Update current conversation history
-                st.session_state.current_conversation.append({
-                    "question": query,
-                    "response": translated_response
-                })
+                # Update conversation history using MemoryAgent
+                memory_agent.add_exchange(query, translated_response)
+                
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
                 st.write("Please try again or contact support if the problem persists.")
 
-    st.button("Save Conversation and Start New", on_click=save_conversation)
     # Add a button to save the current conversation and start a new one
-    # if st.button("Save Conversation and Start New"):
-    #     if st.session_state.current_conversation:
-    #         if 'previous_conversations' not in st.session_state:
-    #             st.session_state.previous_conversations = []
-    #         st.session_state.previous_conversations.append(st.session_state.current_conversation)
-    #         st.session_state.current_conversation = []
-    #         st.success("Conversation saved! You can start a new one now.")
-    #         st.rerun()
+    if st.button("Save Conversation and Start New"):
+        memory_agent.start_new_conversation()
+        st.success("New conversation started!")
+        st.rerun()
 
     st.sidebar.title("About")
     st.sidebar.info("This is a RAG system for legal compliance questions using Groq API and Pinecone vector database.")
+
+# Run the chatroom function
+if __name__ == "__main__":
+    chatroom()
