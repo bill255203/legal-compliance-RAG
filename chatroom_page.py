@@ -12,6 +12,11 @@ from google.cloud import translate_v2 as translate
 from google.oauth2 import service_account
 import groq
 import requests
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 nltk.download('punkt')
 
@@ -80,18 +85,22 @@ def translate_content(content, target_lang="en", source_lang="zh"):
         try:
             results = translate_client.translate(batch, target_language=target_lang, source_language=source_lang)
             translated_sentences.extend([result['translatedText'] for result in results])
+            
+            # Log translation details
+            logger.info(f"Translated {len(batch)} sentences from {source_lang} to {target_lang}")
+            logger.info(f"Original: {batch}")
+            logger.info(f"Translated: {translated_sentences[-len(batch):]}")
         except Exception as e:
-            st.error(f"Error translating batch: {e}")
+            logger.error(f"Error translating batch: {e}")
             translated_sentences.extend(batch)
 
     return ' '.join(translated_sentences)
 
 def generate_prompt_with_context(retrieved_docs, query, template):
     context = ' '.join([doc['content'] for doc in retrieved_docs])
-    translated_context = translate_content(context)
-    
+    # Don't translate the context, use it as is
     qa_template = PromptTemplate(template)
-    return qa_template.format(context_str=translated_context, query_str=query)
+    return qa_template.format(context_str=context, query_str=query)
 
 def query_groq_api(model, prompt):
     response = groq_client.chat.completions.create(
@@ -202,6 +211,7 @@ def chatroom(memory_agent: MemoryAgent):
         with st.spinner("Processing your query..."):
             try:
                 translated_query = translate_content(query, source_lang="zh-TW", target_lang="en")
+                logger.info(f"Translated query: {translated_query}")
                 retrieved_indices = query_vector_database(translated_query, top_k=2)
                 
                 # Ensure documents are loaded
@@ -237,6 +247,7 @@ def chatroom(memory_agent: MemoryAgent):
                 memory_agent.add_exchange(query, translated_response)
                 
             except Exception as e:
+                logger.error(f"An error occurred: {str(e)}")
                 st.error(f"An error occurred: {str(e)}")
                 st.write("Please try again or contact support if the problem persists.")
 
@@ -251,4 +262,4 @@ def chatroom(memory_agent: MemoryAgent):
 
 # Run the chatroom function
 if __name__ == "__main__":
-    chatroom()
+    chatroom(memory_agent)
