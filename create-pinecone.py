@@ -4,7 +4,6 @@ import numpy as np
 from transformers import AutoTokenizer, AutoModel
 import torch
 from pinecone import Pinecone, ServerlessSpec
-from deep_translator import GoogleTranslator
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -13,25 +12,25 @@ PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
 # Define paths and model
-LAW_DIR = 'C:\\law'
-VECTOR_MODEL_NAME = 'sentence-transformers/all-MiniLM-L6-v2'
+LAW_DIR = 'C:\\laws'
+VECTOR_MODEL_NAME = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'  # Use a model that supports Chinese
 
 # Load the tokenizer and model for vectorization
 vector_tokenizer = AutoTokenizer.from_pretrained(VECTOR_MODEL_NAME)
 vector_model = AutoModel.from_pretrained(VECTOR_MODEL_NAME)
 
 # Create Pinecone index
-index_name = 'law-documents'
+index_name = 'laws'
 dimension = 384  # Replace with the dimension of your embeddings
 if index_name not in pc.list_indexes():
     pc.create_index(
         name=index_name,
         dimension=dimension,
         metric="euclidean",
-        spec=ServerlessSpec(
-            cloud="aws",
-            region="us-east-1"
-        )
+            spec=ServerlessSpec(
+                cloud='aws',
+                region='us-east-1'
+            )
     )
 
 index = pc.Index(index_name)
@@ -76,21 +75,15 @@ def extract_content(data):
         pass
     return ' '.join(content)
 
-# Function to translate content using GoogleTranslator
-def translate_content(content, target_language='en'):
-    translator = GoogleTranslator(source='auto', target=target_language)
-    return translator.translate(content)
-
 # Function to vectorize content using transformer model
 def vectorize_documents(documents):
     embeddings = []
     for doc in documents:
-        translated_content = translate_content(doc['content'])
-        inputs = vector_tokenizer(translated_content, return_tensors='pt', truncation=True, padding=True)
+        content = doc['content']
+        inputs = vector_tokenizer(content, return_tensors='pt', truncation=True, padding=True)
         with torch.no_grad():
             outputs = vector_model(**inputs)
         embeddings.append(outputs.last_hidden_state.mean(dim=1).squeeze().numpy())
-        doc['content'] = translated_content  # Optionally store the translated content back in the document
     return np.array(embeddings), documents
 
 # Read and preprocess JSON files
