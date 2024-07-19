@@ -34,9 +34,8 @@ credentials = service_account.Credentials.from_service_account_file(GOOGLE_APPLI
 translate_client = translate.Client(credentials=credentials)
 
 # Constants
-VECTOR_MODEL_NAME = 'sentence-transformers/all-MiniLM-L6-v2'
-QUERY_MODEL_NAME = 'llama3-8b-8192'
-INDEX_NAME = 'law-documents'
+VECTOR_MODEL_NAME = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
+INDEX_NAME = 'laws'
 
 # Load models
 vector_tokenizer = AutoTokenizer.from_pretrained(VECTOR_MODEL_NAME)
@@ -212,7 +211,7 @@ def chatroom(memory_agent: MemoryAgent):
             try:
                 translated_query = translate_content(query, source_lang="zh-TW", target_lang="en")
                 logger.info(f"Translated query: {translated_query}")
-                retrieved_indices = query_vector_database(translated_query, top_k=2)
+                retrieved_indices = query_vector_database(query, top_k=2)
                 
                 # Ensure documents are loaded
                 documents = load_documents()
